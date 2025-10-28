@@ -20,7 +20,9 @@ public class DataLoader {
                     new Document("Spring Boot vereinfacht die Java-Webentwicklung mit Auto-Configuration.",
                             Map.of("source","seed","topic","spring")),
                     new Document("Deutschland ist ein Land in Europa. Hauptstadt ist Berlin.",
-                            Map.of("source","seed","topic","deutschland"))
+                            Map.of("source","seed","topic","deutschland")),
+                    new Document("Kamerun ist ein Land in Europa. Hauptstadt ist Paris.",
+                            Map.of("source","seed","topic","kamerun"))
             ));
             System.out.println(">> Seed-Dokumente eingebettet.");
         };
