@@ -1,5 +1,37 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="de">
+
+<!-- HERO-HEADER -->
+<header class="relative w-full overflow-hidden shadow-md">
+    <!-- Hintergrund -->
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0A3A64] via-[#0B4876] to-[#0A3A64]"></div>
+    <div class="absolute inset-0 opacity-10"
+         style="background-image: radial-gradient(white 1px, transparent 1px);
+              background-size: 18px 18px;"></div>
+
+    <!-- Inhalt -->
+    <div class="relative max-w-6xl mx-auto px-6 py-8 md:py-10 flex items-center gap-6">
+        <!-- Logo -->
+        <img src="/img/drv-bund-header.png"
+             alt="Deutsche Rentenversicherung Bund"
+             class="h-14 md:h-20 w-auto drop-shadow-md select-none" />
+
+        <!-- Textblock -->
+        <div class="text-white leading-tight">
+            <div class="text-2xl md:text-3xl font-semibold tracking-tight">
+                GQ0500 Erster Hackaton
+            </div>
+        </div>
+
+        <!-- Rechts: Badge -->
+        <div class="ms-auto hidden md:block">
+      <span class="inline-flex items-center rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white ring-1 ring-white/20">
+        🧠 Demo · AI Wissensspeicher
+      </span>
+        </div>
+    </div>
+</header>
+
 <head>
     <meta charset="UTF-8" />
     <title>AI Chat – MVC</title>
@@ -40,6 +72,15 @@
         </button>
     </form>
 
+
+
+    <!-- Antwortbereich -->
+    <div th:if="${chat}" class="mt-6 bg-white p-4 rounded-2xl shadow">
+        <h2 class="font-medium mb-2">Antwort:</h2>
+        <p class="text-sm text-gray-500 mb-2" th:text="'Prompt: ' + ${chat.prompt}"></p>
+        <p th:text="${chat.answer}"></p>
+    </div>
+
     <!-- Neuer Bereich: Datei-Upload -->
     <div class="mt-8 border-t pt-6">
         <h2 class="text-xl font-semibold mb-4">📄 Wissensbasis erweitern (PDF hochladen)</h2>
@@ -58,13 +99,6 @@
                 Hochladen & in Wissensdatenbank speichern
             </button>
         </form>
-    </div>
-
-    <!-- Antwortbereich -->
-    <div th:if="${chat}" class="mt-6 bg-white p-4 rounded-2xl shadow">
-        <h2 class="font-medium mb-2">Antwort:</h2>
-        <p class="text-sm text-gray-500 mb-2" th:text="'Prompt: ' + ${chat.prompt}"></p>
-        <p th:text="${chat.answer}"></p>
     </div>
 </div>
 </body>
