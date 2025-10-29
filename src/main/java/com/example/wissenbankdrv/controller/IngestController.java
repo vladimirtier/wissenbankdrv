@@ -5,55 +5,70 @@ import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
-import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/ingest")
 public class IngestController {
 
     private final VectorStore vectorStore;
+    private final JdbcTemplate jdbc;
 
-    public IngestController(VectorStore vectorStore) {
+    // Passe ggfs. Schema/Tabelle an, falls du andere Namen verwendest
+    private static final String TABLE = "public.document_embeddings";
+
+    public IngestController(VectorStore vectorStore, JdbcTemplate jdbc) {
         this.vectorStore = vectorStore;
+        this.jdbc = jdbc;
     }
 
-    @PostMapping(
-            value = "/pdf",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<?> addPdf(@RequestPart("file") MultipartFile file) {
+    @PostMapping(value = "/pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public String addPdf(@RequestParam("file") MultipartFile file, RedirectAttributes redirect) {
         try {
             if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "file is empty"));
+                redirect.addFlashAttribute("uploadError", "❌ Datei ist leer.");
+                return "redirect:/";
             }
 
-            // MultipartFile.getResource() ist nicht immer seekable.
-            // ByteArrayResource ist sicherer:
+            // Sicheres Resource-Handling aus Multipart
             ByteArrayResource res = new ByteArrayResource(file.getBytes()) {
                 @Override public String getFilename() { return file.getOriginalFilename(); }
             };
 
-            PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(res);
-            List<Document> docs = pdfReader.get();
+            // Seiten extrahieren (kein OCR – nur „echter“ PDF-Text)
+            PagePdfDocumentReader reader = new PagePdfDocumentReader(res);
+            List<Document> docs = reader.get();
 
-            vectorStore.add(docs);
+            // Nur Seiten mit Text speichern (vermeidet leere Einträge)
+            List<Document> nonEmpty = docs.stream()
+                    .filter(d -> d.getFormattedContent() != null && !d.getFormattedContent().isBlank())
+                    .toList();
 
-            return ResponseEntity.ok(Map.of(
-                    "status", "ok",
-                    "filename", file.getOriginalFilename(),
-                    "pagesStored", docs.size()
-            ));
+            if (nonEmpty.isEmpty()) {
+                redirect.addFlashAttribute("uploadError",
+                        "❌ Keine extrahierbaren Textinhalte gefunden (PDF evtl. gescannt ohne OCR).");
+                return "redirect:/";
+            }
+
+            vectorStore.add(nonEmpty);
+
+            // Gesamtzahl in der DB (optional, für Statusbox)
+            Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM " + TABLE, Integer.class);
+
+            redirect.addFlashAttribute("uploadSuccess",
+                    "✅ \"" + file.getOriginalFilename() + "\" gespeichert – " + nonEmpty.size() + " Seite(n) eingebettet.");
+            redirect.addFlashAttribute("kbTotal", total != null ? total : 0);
+
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                    "status", "error",
-                    "message", e.getMessage()
-            ));
+            redirect.addFlashAttribute("uploadError", "❌ Upload fehlgeschlagen: " + e.getMessage());
         }
+        // Zur Startseite zurück – Seite bleibt offen, bereit für neue Anfragen/Uploads
+        return "redirect:/";
     }
 }
