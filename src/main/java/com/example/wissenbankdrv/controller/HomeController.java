@@ -2,6 +2,10 @@ package com.example.wissenbankdrv.controller;
 
 
 import com.example.wissenbankdrv.model.ChatResponse;
+import com.vladsch.flexmark.html.HtmlRenderer;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.util.ast.Node;
+import com.vladsch.flexmark.util.data.MutableDataSet;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
@@ -79,13 +83,19 @@ public class HomeController {
                     .user(prompt)
                     .call()
                     .content();
+            // 👉 Markdown in HTML umwandeln
+            MutableDataSet options = new MutableDataSet();
+            Parser parser = Parser.builder(options).build();
+            HtmlRenderer renderer = HtmlRenderer.builder(options).build();
+            Node document = parser.parse(answer);
+            String htmlAnswer = renderer.render(document);
+
+            model.addAttribute("chat", new ChatResponse(prompt, htmlAnswer));
         } catch (Exception e) {
-            answer = "Fehler beim Abrufen: " + e.getMessage();
+            model.addAttribute("chat", new ChatResponse(prompt, "<p class='text-red-600'>Fehler: " + e.getMessage() + "</p>"));
         }
 
-        // Antwort + Prompt ins Model, damit Thymeleaf es anzeigen kann
-        model.addAttribute("chat", new ChatResponse(prompt, answer));
-        return "index"; // dieselbe Seite erneut rendern
+        return "index";
     }
 
     @PostMapping("/add")

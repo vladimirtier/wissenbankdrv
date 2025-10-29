@@ -3,6 +3,8 @@
 
 <!-- HERO-HEADER -->
 <header class="relative w-full overflow-hidden shadow-md">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.9/dist/typography.min.css">
+
     <!-- Hintergrund -->
     <div class="absolute inset-0 bg-gradient-to-r from-[#0A3A64] via-[#0B4876] to-[#0A3A64]"></div>
     <div class="absolute inset-0 opacity-10"
@@ -72,7 +74,7 @@
     <div th:if="${chat}" class="mt-6 bg-white p-4 rounded-2xl shadow">
         <h2 class="font-medium mb-2">Antwort:</h2>
         <p class="text-sm text-gray-500 mb-2" th:text="'Prompt: ' + ${chat.prompt}"></p>
-        <p th:text="${chat.answer}"></p>
+        <div th:utext="${chat.answer}" class="prose max-w-none"></div>
     </div>
 
     <!-- Neuer Bereich: Datei-Upload -->
